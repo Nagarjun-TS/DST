@@ -1,75 +1,122 @@
 #include<stdio.h>
 #include<stdlib.h>
-#include<ctype.h>
+#include<stdbool.h>
 #include<string.h>
+#include<ctype.h>
 
-struct stack
-{
+struct stack{
     int top;
-    int size;
-    int *q;
+    int a[100];
 };
-
-void create(struct stack*st,int size){
-    st->size = size;
-    st->q = (int*)malloc(size*sizeof(int));
-    st->top = -1;
+void create(struct stack*st){
+st->top = -1;
+}
+void push(struct stack*st,int val){
+    st->a[++(st->top)] = val;
 }
 
-int prec(char c){
-    if(c=='+' || c=='-'){
-        return 1;
-    }
-    if(c=='*' || c=='/'){
-        return 2;
-    }
-    if(c=='^'){
-        return 3;
-    }
+int pop(struct stack*st){
+    int x = st->a[st->top];
+    st->top--;
+    return x;
 }
 
-char associativity(char c){
-    if(c=='^')
-    return 'r';
-    return 'l';
+int cal(int op1,int op2,char op){
+    int r;
+    switch(op){
+        case '+':r=op1+op2;
+        break;
+        case '-':r= op1-op2;
+        break;
+        case '*':r = op1*op2;
+        break;
+        case '/':r=op1/op2;
+        break;
+        default:return -1; 
+    }
+    return r;
 }
-
-void convert(char s[],struct stack*st){
-    int index=0;
-    char res[100];
-    for(int i=strlen(s)-1;i>=0;i--){
-        char c = s[i];
-        if(isalnum(c)){
-            res[index++] = c;
-        }
-        else if(c==')'){
-            st->q[++st->top] = c;
-        }
-        else if(c == '('){
-           while(st->top>=0 && st->q[st->top]!=')'){
-                res[index++] = st->q[st->top--];
-            }st->top--;
+int evaluate(struct stack*st,char prefix[]){
+    char c;
+    int x;
+    for(int i=strlen(prefix)-1;i>=0;i--){
+        char c = prefix[i];
+        if(isdigit(c)){
+            push(st,c-'0');
         }
         else{
-             while(st->top>=0 && prec(st->q[st->top])>=prec(s[i]) && associativity(c)){
-                res[index++] = st->q[st->top--];
-             }st->q[++st->top] = c;
+            int op1 = pop(st);
+            int op2 = pop(st);
+            x = cal(op1,op2,c);
+            push(st,x);
         }
     }
-    while(st->top>=0){
-        res[index++] = st->q[st->top--];
+    return st->a[st->top--];
+}
+int prec(char c){
+    if(c == '+' || c == '-'){
+        return 1;
     }
-    res[index++] = '\0';
-    for(int i=strlen(res)-1;i>=0;i--){
-        printf("%c",res[i]);
+    else if(c =='*' || c=='/'){
+        return 2;
+    }
+    else if(c == '^'){
+        return 3;
+    }
+    else return -1;
+}
+void convert(char infix[]){
+    char c,result[100],stack[100];
+    int index = 0;
+    int top = -1;
+for(int i=strlen(infix);i>=0;i--){
+    c = infix[i];
+    if(isalnum(c)){
+        result[index++] = c;
+    }
+    else if(c == ')'){
+        stack[++top] = c;
+    }
+    else if(c == '('){
+        while(top>=0 && stack[top] != '('){
+            result[index++] = stack[top--];
+        }top--;
+    }
+    else{
+        while(top>=0 && prec(c)<=prec(stack[top])){
+            result[index++] = stack[top--];
+        }
+        stack[++top] = c;
     }
 }
+while(top>=0){
+    result[index++] = stack[top--];
+}
+for(int i = strlen(result)-1;i>=0;i--){
+    printf("%c",result[i]);
+}
+printf("\n");
+}
 int main(){
-    char s[100];
     struct stack*st = (struct stack*)malloc(sizeof(struct stack));
-    printf("enter the infix expression\n");
-    scanf("%s",s);
-    create(st,strlen(s));
-    convert(s,st);
+    create(st);
+    char prefix[100],infix[100];
+    int opt;
+    while(1){
+        printf("\nenter the option\n");
+        scanf("%d",&opt);
+        switch (opt)
+        {
+        case 1:printf("enter the prefix expression");
+        scanf("%s",&prefix);
+        printf("%d is the result\n",evaluate(st,prefix));
+        break;
+        case 2:printf("enter the infix expression\n");
+        scanf("%s",&infix);
+        convert(infix);
+        break;        
+        default:return 0;
+        }
+    }
     return 0;
 }
